@@ -4,41 +4,60 @@
 #include<algorithm>
 #include<tuple>
 using namespace std;
-const int MAXN = 10;
-int parent[MAXN], rank_arr[MAXN];
-int find(int x) {
-    if (parent[x] == x) return x;
-    return parent[x] = find(parent[x]);
-}
-void union_sets(int x, int y) {
-    x = find(x);
-    y = find(y);
-    if (x == y) return;
-    if (rank_arr[x] < rank_arr[y]) swap(x, y);
-    parent[y] = x;
-    if (rank_arr[x] == rank_arr[y]) rank_arr[x]++;
-}
+
+typedef tuple<int, int, int> iii;
+typedef vector<int> vi;
+class UnionFind {                               
+private:
+  vi p, rank, setSize;                          
+  int numSets;
+public:
+  UnionFind(int N) {
+    p.assign(N, 0); for (int i = 0; i < N; ++i) p[i] = i;
+    rank.assign(N, 0);                           
+    setSize.assign(N, 1);                        
+    numSets = N;                                 
+  }
+  int findSet(int i) { return (p[i] == i) ? i : (p[i] = findSet(p[i])); }
+  bool isSameSet(int i, int j) { return findSet(i) == findSet(j); }
+  void unionSet(int i, int j) {
+    if (isSameSet(i, j)) return;                 
+    int x = findSet(i), y = findSet(j);          
+    if (rank[x] > rank[y]) swap(x, y);           
+    p[x] = y;                                    
+    if (rank[x] == rank[y]) ++rank[y];           
+    setSize[y] += setSize[x];                    
+    --numSets;                                   
+  }
+  int numDisjointSets() { return numSets; }
+  int sizeOfSet(int i) { return setSize[findSet(i)]; }
+};
+
 int main() {
-    int n, m;
-    cout<<"Enter no. of vertices ";
-    cin >>n;
-    cout<<"Enter no. of edges ";
-    cin>>m;
-    for (int i = 1; i <= n; i++) {
-        parent[i] = i;
-        rank_arr[i] = 1;
-    }
-    int u, v, w;
-    for (int i = 1; i <= m; i++) {
-        cin >> u >> v >> w;
-        union_sets(u, v);
-    }
-    int mst_weight = 0;
-    for (int i = 1; i <= n; i++) {
-        if (parent[i] == i) {
-            mst_weight += w;
-        }
-    }
-    cout << "Total MST Weight: " << mst_weight << endl;
-    return 0;
+
+  freopen("mst_in.txt", "r", stdin);
+  int V, E; scanf("%d %d", &V, &E);
+  vector<iii> EL(E);
+  for (int i = 0; i < E; ++i) {
+    int u, v, w; scanf("%d %d %d", &u, &v, &w); 
+    EL[i] = {w, u, v};                          
+  }
+  sort(EL.begin(), EL.end());                  
+ 
+
+  int mst_cost = 0, num_taken = 0;               
+  UnionFind UF(V);                               
+  
+  for (int i = 0; i < E; ++i) {                  
+    auto [w, u, v] = EL[i];                      
+    if (UF.isSameSet(u, v)) continue;            
+    mst_cost += w;                               
+    UF.unionSet(u, v);                           
+    ++num_taken;                                 
+    if (num_taken == V-1) break;                 
+  }
+ 
+  printf("MST cost = %d (Kruskal's)\n", mst_cost);
+
+  return 0;
 }
